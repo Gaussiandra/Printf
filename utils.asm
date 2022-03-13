@@ -91,3 +91,7 @@ reverseString:
             jl .swap
 
             ret
+
+section .data
+
+xlatTable:      db "0123456789ABCDEF"

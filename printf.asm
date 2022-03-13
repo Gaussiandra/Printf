@@ -12,34 +12,40 @@
 BUFFER_SIZE equ 128
 
 section .text
-    global _start
+    global myPrintf
 
-_start:
+myPrintf:
             cld
 
-            push 'v'
-            push 255
-            push 15
-            push 16
-            push 88
-            push 123
-            push 22334455
-            push argStr2
-            push argStr1
-            push 'c'
-            push 'b'
-            push 'a'
-            push testInput
+            ; R12–R15 are not used
+            push rbx
+            push rsp
+            push rbp
+
+            ; push 'v'
+            ; push 255
+            ; push 15
+            ; push 16
+            ; push 88
+            ; push 123
+            ; push 22334455
+            ; push argStr2
+            ; push argStr1
+            ; push 'c'
+            ; push 'b'
+            ; push 'a'
+            ; push testInput
             call printf
-            add esp, 13 * 8
+            ; add esp, 13 * 8
+
+            pop rbp
+            pop rsp
+            pop rbx
 
             mov	rax, 60	                ; exit
             mov	rdi, 0                  ; with success
             syscall             
 
-;---------------------------------------
-; Printf with cdecl style 
-;---------------------------------------
 printf:
             mov rsi, [rsp + 8]          ; parsing string addr
             mov rdi, printfBuffer       ; buffer addr
@@ -53,7 +59,7 @@ parseFormatString:
             cmp byte [rsi], '%'
             jne commonSymbol
             inc rsi
-            cmp byte [rsi], '%'
+            cmp byte [rsi], '%'         ; %% case
             je commonSymbol
             lodsb
             jmp specJmpTable[(rax - 'b') * 8]
@@ -83,7 +89,6 @@ charSpec:
 
             jmp parseFormatString
 
-
 digitSpec:
             movFromStackTo eax
             itoaAndContinue 10
@@ -112,9 +117,9 @@ printfBuffer:   resb BUFFER_SIZE
 
 section .data
 
-testInput:      db "Hello!1 %c%c %c aboba %s %s z %d %d %o-%o %b %x %%%c%k", 10, 0
-argStr1:        db "amogus", 0
-argStr2:        db "beef2", 0
+; testInput:      db "Hello!1 %c%c %c aboba %s %s z %d %d %o-%o %b %x %%%c", 10, 0
+; argStr1:        db "amogus", 0
+; argStr2:        db "beef2", 0
 
 specJmpTable:   dq binSpec              ; 0
                 dq charSpec             ; 1
@@ -125,5 +130,3 @@ times 's'-'o'-1 dq parseFormatString    ; 14 - 16
                 dq stringSpec           ; 17
 times 'x'-'s'-1 dq parseFormatString    ; 18 - 21
                 dq hexSpec              ; 22
-
-xlatTable:      db "0123456789ABCDEF"
