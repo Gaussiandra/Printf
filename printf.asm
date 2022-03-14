@@ -133,7 +133,7 @@ section .bss
 
 printfBuffer:   resb BUFFER_SIZE
 
-section .data
+section .rodata
 
 specJmpTable:   dq binSpec              ; 0
                 dq charSpec             ; 1
