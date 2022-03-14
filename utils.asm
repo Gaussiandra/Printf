@@ -95,6 +95,6 @@ reverseString:
 
             ret
 
-section .data
+section .rodata
 
 xlatTable:      db "0123456789ABCDEF"
