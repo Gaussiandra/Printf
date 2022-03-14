@@ -17,12 +17,15 @@ copyString:
 ;        RDI - output string addr
 ; Destr: RAX, RDI, EDX, R8, R9, R10
 ;---------------------------------------
-itoa:
+itoa:       
+            xor edx, edx
+            xor r8, r8
+            xor r10, r10
             xor r9, r9                  ; r9 - strlen
 
             bsf edx, ecx 
             bsr r8d, ecx
-            cmp edx, r8d                ; if ecx has only one non-0 bit
+            cmp edx, r8d                ; if ecx has only one non-0 bit (binary logarithm)
             jne .commonConvert
             
             push cx

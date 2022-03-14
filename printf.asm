@@ -1,6 +1,6 @@
 %macro movFromStackTo 1
-            add rbx, 8
-            mov %1, [rbx]
+            add rbp, 8
+            mov %1, [rbp]
 %endmacro
 
 %macro itoaAndContinue 1
@@ -9,7 +9,9 @@
             jmp parseFormatString
 %endmacro
 
-BUFFER_SIZE equ 128
+WRITE_SYSCALL equ 1
+OUTPUT_DESC   equ 1
+BUFFER_SIZE   equ 128
 
 section .text
     global myPrintf
@@ -17,42 +19,58 @@ section .text
 myPrintf:
             cld
 
-            ; R12–R15 are not used
-            push rbx
+            pop rax                     ; ret addr
+            
+            ; push first six args
+            push r9
+            push r8
+            push rcx
+            push rdx
+            push rsi
+            push rdi
+
+            ; push callee-used registers
             push rsp
             push rbp
-
-            ; push 'v'
-            ; push 255
-            ; push 15
-            ; push 16
-            ; push 88
-            ; push 123
-            ; push 22334455
-            ; push argStr2
-            ; push argStr1
-            ; push 'c'
-            ; push 'b'
-            ; push 'a'
-            ; push testInput
+            push rbx
+            push r12
+            push r13
+            push r14
+            push r15
+            
+            mov r15, rax
+            mov rbp, rsp
+            add rbp, 7 * 8              ; points to args
             call printf
-            ; add esp, 13 * 8
 
+            ; pop callee-used registers
+            mov rax, r15
+            pop r15
+            pop r14
+            pop r13
+            pop r12
+            pop rbx
             pop rbp
             pop rsp
-            pop rbx
 
-            mov	rax, 60	                ; exit
-            mov	rdi, 0                  ; with success
-            syscall             
+            ; pop callee-used registers
+            pop rdi
+            pop rsi
+            pop rdx
+            pop rcx
+            pop r8
+            pop r9
+
+            push rax
+            ret         
 
 printf:
-            mov rsi, [rsp + 8]          ; parsing string addr
+            mov rsi, [rbp]              ; parsing string addr
             mov rdi, printfBuffer       ; buffer addr
-            mov rbx, rsp
-            add rbx, 8                  ; arguments stack offset
 
 parseFormatString:
+            xor rax, rax
+
             cmp byte [rsi], 0
             je exit
 
@@ -70,10 +88,10 @@ commonSymbol:
 
 exit:
             mov rsi, printfBuffer
-            mov rax, 1                  ; write syscall
+            mov rax, WRITE_SYSCALL      ; write syscall
             mov rdx, rdi                
             sub rdx, printfBuffer       ; strlen
-            mov rdi, 1                  ; output descriptor
+            mov rdi, OUTPUT_DESC        ; output descriptor
 
             syscall
 
@@ -116,10 +134,6 @@ section .bss
 printfBuffer:   resb BUFFER_SIZE
 
 section .data
-
-; testInput:      db "Hello!1 %c%c %c aboba %s %s z %d %d %o-%o %b %x %%%c", 10, 0
-; argStr1:        db "amogus", 0
-; argStr2:        db "beef2", 0
 
 specJmpTable:   dq binSpec              ; 0
                 dq charSpec             ; 1
